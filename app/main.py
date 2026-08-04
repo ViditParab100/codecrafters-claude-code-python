@@ -86,11 +86,12 @@ def main():
         # You can use print statements as follows for debugging, they'll be visible when running tests.
         print("Logs from your program will appear here!", file=sys.stderr)
 
-        for tc in response.tool_calls:
-            args_dict = json.loads(tc.function.arguments)
-            if tc.function.name == "Read":
-                with open(args_dict["file_path"], "r") as f:
-                    result = f.read()
+        if hasattr(response, "tool_calls") and response.tool_calls:
+            for tc in response_message.tool_calls:
+                args_dict = json.loads(tc.function.arguments)
+                if tc.function.name == "Read":
+                    with open(args_dict["file_path"], "r") as f:
+                        result = f.read()
                     messages.append(
                         {
                         "role": "tool",
