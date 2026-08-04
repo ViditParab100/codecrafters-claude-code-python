@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(script_dir, '.env')
 # 3. Force dotenv to load from that specific path
 load_dotenv(dotenv_path=env_path)
-print(env_path)
+# print(env_path)
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
