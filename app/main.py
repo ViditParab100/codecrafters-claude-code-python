@@ -28,12 +28,14 @@ def main():
         raise RuntimeError("OPENROUTER_API_KEY is not set")
 
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    messages=[{"role": "user", "content": args.p}]
 
-    chat = client.chat.completions.create(
-        # model="google/gemma-4-26b-a4b-it:free",
-        model="anthropic/claude-haiku-4.5",
-        messages=[{"role": "user", "content": args.p}],
-        tools=[
+    while True:
+        chat = client.chat.completions.create(
+            # model="google/gemma-4-26b-a4b-it:free",
+            model="anthropic/claude-haiku-4.5",
+            messages=messages,
+            tools=[
                 {
                     "type": "function",
                     "function": {
@@ -52,23 +54,50 @@ def main():
                     }
                 }
             ]
-    )
+        )
 
-    if not chat.choices or len(chat.choices) == 0:
-        raise RuntimeError("no choices in response")
+        if not chat.choices or len(chat.choices) == 0:
+            raise RuntimeError("no choices in response")
 
-    message = chat.choices[0].message
-    if message.content:
-        print(message.content)
+        response = chat.choices[0].message
+        response_message = chat.choices[0].message
+        message_dict = {
+            "role": response_message.role,
+            "content": response_message.content,
+        }
 
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!", file=sys.stderr)
+        if hasattr(response_message, "tool_calls") and response_message.tool_calls:
+            message_dict["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments
+                    }
+                }
+                for tc in response_message.tool_calls
+            ]
 
-    for tc in chat.choices[0].message.tool_calls or []:
-        args = json.loads(tc.function.arguments)
-        if tc.function.name == "Read":
-            with open(args["file_path"]) as f:
-                print(f.read())
+        messages.append(message_dict)
+        if not message_dict.get("tool_calls"):
+            print(response.content)  
+
+        # You can use print statements as follows for debugging, they'll be visible when running tests.
+        print("Logs from your program will appear here!", file=sys.stderr)
+
+        for tc in response.tool_calls:
+            args_dict = json.loads(tc.function.arguments)
+            if tc.function.name == "Read":
+                with open(args_dict["file_path"], "r") as f:
+                    result = f.read()
+                    messages.append(
+                        {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": result
+                    }
+                    )
 
 
 if __name__ == "__main__":
