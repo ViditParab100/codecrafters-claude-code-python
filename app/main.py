@@ -1,9 +1,18 @@
 import argparse
+from dotenv import load_dotenv
 import os
 import sys
 import json
 
 from openai import OpenAI
+
+# 1. Find the folder where this script actually lives
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# 2. Build the exact path to the .env file in that folder
+env_path = os.path.join(script_dir, '.env')
+# 3. Force dotenv to load from that specific path
+load_dotenv(dotenv_path=env_path)
+print(env_path)
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
@@ -20,7 +29,7 @@ def main():
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
     chat = client.chat.completions.create(
-        model="anthropic/claude-haiku-4.5",
+        model="google/gemma-4-26b-a4b-it:free",
         messages=[{"role": "user", "content": args.p}],
         tools=[
                 {
