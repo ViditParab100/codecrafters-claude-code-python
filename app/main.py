@@ -30,8 +30,8 @@ def main():
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
     chat = client.chat.completions.create(
-        model="google/gemma-4-26b-a4b-it:free",
-        # model="anthropic/claude-haiku-4.5",
+        # model="google/gemma-4-26b-a4b-it:free",
+        model="anthropic/claude-haiku-4.5",
         messages=[{"role": "user", "content": args.p}],
         tools=[
                 {
