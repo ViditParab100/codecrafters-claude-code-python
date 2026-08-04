@@ -1,4 +1,5 @@
 import argparse
+from email.mime import message
 from dotenv import load_dotenv
 import os
 import sys
@@ -29,8 +30,8 @@ def main():
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
     chat = client.chat.completions.create(
-        # model="google/gemma-4-26b-a4b-it:free",
-        model="anthropic/claude-haiku-4.5",
+        model="google/gemma-4-26b-a4b-it:free",
+        # model="anthropic/claude-haiku-4.5",
         messages=[{"role": "user", "content": args.p}],
         tools=[
                 {
@@ -55,6 +56,10 @@ def main():
 
     if not chat.choices or len(chat.choices) == 0:
         raise RuntimeError("no choices in response")
+
+    message = chat.choices[0].message
+    if message.content:
+        print(message.content)
 
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!", file=sys.stderr)
