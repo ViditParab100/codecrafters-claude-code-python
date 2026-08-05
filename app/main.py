@@ -136,7 +136,7 @@ def main():
         for tc in response_message.tool_calls:
             args_dict = json.loads(tc.function.arguments)
             if tc.function.name == "Read":
-                with open(args_dict["file_path"], "r") as f:
+                with open(args_dict["file_path"], "r", encoding="utf-8") as f:
                     result = f.read()
                     messages.append(
                         {
@@ -147,10 +147,10 @@ def main():
                     )
             elif tc.function.name == "Write":
                 if not os.path.exists(args_dict["file_path"]):
-                    with open(args_dict["file_path"], "w") as f:
+                    with open(args_dict["file_path"], "w", encoding="utf-8") as f:
                         f.write(args_dict["content"])
                 else:
-                    with open(args_dict["file_path"], "w") as f:
+                    with open(args_dict["file_path"], "w", encoding="utf-8") as f:
                         f.write(args_dict["content"])
                 messages.append(
                     {
