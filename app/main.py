@@ -32,8 +32,8 @@ def main():
 
     while True:
         chat = client.chat.completions.create(
-            # model="google/gemma-4-26b-a4b-it:free",
-            model="anthropic/claude-haiku-4.5",
+            model="google/gemma-4-26b-a4b-it:free",
+            # model="anthropic/claude-haiku-4.5",
             messages=messages,
             tools=[
                 {
