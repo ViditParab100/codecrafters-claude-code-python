@@ -37,7 +37,7 @@ def main():
     messages=[{"role": "user", "content": args.p}]
 
     while True:
-        chat = sarvam_client.chat.completions.create(
+        chat = sarvam_client.chat.completions(
             # model="google/gemma-4-26b-a4b-it:free",
             # model="anthropic/claude-haiku-4.5",
             model="sarvam-105b",
