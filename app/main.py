@@ -73,6 +73,23 @@ def main():
                         }
                         }
                     }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "Bash",
+                        "description": "Execute a shell command",
+                        "parameters": {
+                        "type": "object",
+                        "required": ["command"],
+                        "properties": {
+                            "command": {
+                            "type": "string",
+                            "description": "The command to execute"
+                            }
+                        }
+                        }
+                    }
                 }
             ]
         )
@@ -133,6 +150,17 @@ def main():
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": f"Wrote to {args_dict['file_path']}"
+                    }
+                    )
+            elif tc.function.name == "Bash":
+                import subprocess
+                result = subprocess.run(args_dict["command"], shell=True, capture_output=True, text=True)
+                result_content = result.stdout if result.returncode == 0 else result.stderr
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": result_content
                     }
                     )
 
