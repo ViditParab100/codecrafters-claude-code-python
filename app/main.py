@@ -52,6 +52,27 @@ def main():
                     "required": ["file_path"]
                         }
                     }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "Write",
+                        "description": "Write content to a file",
+                        "parameters": {
+                        "type": "object",
+                        "required": ["file_path", "content"],
+                        "properties": {
+                            "file_path": {
+                            "type": "string",
+                            "description": "The path of the file to write to"
+                            },
+                            "content": {
+                            "type": "string",
+                            "description": "The content to write to the file"
+                            }
+                        }
+                        }
+                    }
                 }
             ]
         )
@@ -98,6 +119,20 @@ def main():
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": result
+                    }
+                    )
+            elif tc.function.name == "Write":
+                if not os.path.exists(args_dict["file_path"]):
+                    with open(args_dict["file_path"], "w") as f:
+                        f.write(args_dict["content"])
+                else:
+                    with open(args_dict["file_path"], "w") as f:
+                        f.write(args_dict["content"])
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": f"Wrote to {args_dict['file_path']}"
                     }
                     )
 
