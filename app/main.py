@@ -6,6 +6,7 @@ import sys
 import json
 
 from openai import OpenAI
+from sarvamai import SarvamAI
 
 # 1. Find the folder where this script actually lives
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,7 @@ load_dotenv(dotenv_path=env_path)
 # print(env_path)
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
 
 
@@ -26,14 +28,19 @@ def main():
 
     if not API_KEY:
         raise RuntimeError("OPENROUTER_API_KEY is not set")
+    if not SARVAM_API_KEY:
+        raise RuntimeError("SARVAM_API_KEY is not set")
 
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    sarvam_client = SarvamAI(api_key=SARVAM_API_KEY)
+
     messages=[{"role": "user", "content": args.p}]
 
     while True:
-        chat = client.chat.completions.create(
-            model="google/gemma-4-26b-a4b-it:free",
+        chat = sarvam_client.chat.completions.create(
+            # model="google/gemma-4-26b-a4b-it:free",
             # model="anthropic/claude-haiku-4.5",
+            model="sarvam-105b",
             messages=messages,
             tools=[
                 {
@@ -123,7 +130,7 @@ def main():
             break  
 
         # You can use print statements as follows for debugging, they'll be visible when running tests.
-        print("Logs from your program will appear here!", file=sys.stderr)
+        print("Logs from your program will appear here!", file=sys.stdout)
 
         
         for tc in response_message.tool_calls:
