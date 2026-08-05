@@ -32,7 +32,7 @@ def main():
         raise RuntimeError("SARVAM_API_KEY is not set")
 
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    sarvam_client = SarvamAI(api_key=SARVAM_API_KEY)
+    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
 
     messages=[{"role": "user", "content": args.p}]
 
