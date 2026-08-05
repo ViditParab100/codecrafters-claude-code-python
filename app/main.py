@@ -146,17 +146,22 @@ def main():
                     }
                     )
             elif tc.function.name == "Write":
-                if not os.path.exists(args_dict["file_path"]):
-                    with open(args_dict["file_path"], "w", encoding="utf-8") as f:
+                file_path = args_dict["file_path"]
+                tmp_path = file_path + ".tmp"
+                try:
+                    with open(tmp_path, "w", encoding="utf-8") as f:
                         f.write(args_dict["content"])
-                else:
-                    with open(args_dict["file_path"], "w", encoding="utf-8") as f:
-                        f.write(args_dict["content"])
+                    os.replace(tmp_path, file_path)
+                    tool_content = f"Wrote to {file_path}"
+                except Exception as e:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+                    tool_content = f"Error writing to {file_path}: {e}"
                 messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,
-                        "content": f"Wrote to {args_dict['file_path']}"
+                        "content": tool_content
                     }
                     )
             elif tc.function.name == "Bash":
