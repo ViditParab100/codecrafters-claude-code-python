@@ -11,6 +11,7 @@ A Python-based command-line interface that allows an LLM (Large Language Model) 
   - `Bash`: Allows the model to run shell commands and see the output/errors.
 - **OpenRouter Integration**: Configured to work with various models via OpenRouter (defaults to a Google Gemma model).
 - **Environment Aware**: Uses `.env` for secure API key management.
+- **Positive Feedback**: After the agent completes a task, it prints a friendly, encouraging confirmation message.
 
 ## Prerequisites
 
@@ -57,6 +58,7 @@ python main.py -p "Read the contents of README.md and tell me what it does"
 4. The script executes the requested function locally (e.g., runs the shell command or reads the file).
 5. The result of that function is sent back to the model.
 6. This continues in a loop until the model provides a final response or reaches a terminal state.
+7. Once the task is complete, a positive confirmation message is displayed.
 
 ## Warning
 

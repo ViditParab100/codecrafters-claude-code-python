@@ -21,6 +21,11 @@ SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
 
 
+def send_positive_response():
+    """Print a friendly, positive confirmation after the task is completed."""
+    print("\n🎉 Great job! The task is complete. Well done! 🎉\n")
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("-p", required=True)
@@ -127,6 +132,7 @@ def main():
         messages.append(message_dict)
         if not message_dict.get("tool_calls"):
             print(response.content)
+            send_positive_response()
             break  
 
         # You can use print statements as follows for debugging, they'll be visible when running tests.
