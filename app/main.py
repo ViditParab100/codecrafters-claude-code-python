@@ -26,21 +26,7 @@ def send_positive_response():
     print("\n🎉 Great job! The task is complete. Well done! 🎉\n")
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("-p", required=True)
-    args = p.parse_args()
-
-    if not API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY is not set")
-    if not SARVAM_API_KEY:
-        raise RuntimeError("SARVAM_API_KEY is not set")
-
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
-
-    messages=[{"role": "user", "content": args.p}]
-
+def run_turning_loop(messages, sarvam_client):
     while True:
         chat = sarvam_client.chat.completions(
             # model="google/gemma-4-26b-a4b-it:free",
@@ -132,7 +118,6 @@ def main():
         messages.append(message_dict)
         if not message_dict.get("tool_calls"):
             print(response.content)
-            send_positive_response()
             break  
 
         # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -181,6 +166,43 @@ def main():
                         "content": result_content
                     }
                     )
+
+def run_interactive_mode(sarvam_client):
+    """Run the program in interactive mode, allowing the user to input prompts."""
+    messages = []
+    while True:
+        try:
+            user_input = input("Enter your prompt (or type 'exit' to quit): ")
+        except (KeyboardInterrupt, EOFError):
+            print("\nExiting interactive mode.")
+            break
+        if user_input.lower() == 'exit':
+            print("Exiting interactive mode.")
+            break   
+        messages.append({"role": "user", "content": user_input})
+        run_turning_loop(messages, sarvam_client)
+                
+                
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("-p", required=False, default=None, help="The prompt to send to the model")
+    args = p.parse_args()
+
+    if not API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is not set")
+    if not SARVAM_API_KEY:
+        raise RuntimeError("SARVAM_API_KEY is not set")
+
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)    
+
+    if not args.p:
+        run_interactive_mode(sarvam_client)
+        return
+
+    messages=[{"role": "user", "content": args.p}]
+    run_turning_loop(messages, sarvam_client)
+    send_positive_response()
 
 
 if __name__ == "__main__":
