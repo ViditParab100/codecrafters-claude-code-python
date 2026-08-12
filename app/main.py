@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import sys
 import json
+import uuid
 
 from openai import OpenAI
 from sarvamai import SarvamAI
@@ -35,10 +36,23 @@ def handle_initialize(message):
         "jsonrpc": "2.0",
         "id": id,
         "result": {
-            "protocol_version": "1.0",
+            "protocolVersion": "1.0",
         }
     }
+    return response
 
+def handle_session_new(message, sessions):
+    request_id = message.get("id")
+    session_id = str(uuid.uuid4())
+    sessions[session_id] = []
+
+    response = {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": {
+            "sessionId": session_id
+        }
+    }
     return response
 
 
@@ -184,18 +198,21 @@ def run_turning_loop(messages, sarvam_client):
                     )
 def run_acp_mode(sarvam_client):
     """Run the program in ACP mode, reading messages from stdin and writing responses to stdout."""
-    try:
+    sessions = {}
+    while True:
+        try:
             message = read_message()
-    except (EOFError, KeyboardInterrupt):
-        print("\nExiting ACP mode.")
-        return
-    # if not message:
-    #     continue
-    if message.get("method") == "initialize":
-        response = handle_initialize(message)
-        write_message(response)
-    #     continue
-    # messages = [message]
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting ACP mode.")
+            break
+
+        if message.get("method") == "initialize":
+            response = handle_initialize(message)
+            write_message(response)
+        elif message.get("method") == "session/new":
+            response = handle_session_new(message, sessions)
+            write_message(response)
+
     # run_turning_loop(messages, sarvam_client)
 
 def run_interactive_mode(sarvam_client):
