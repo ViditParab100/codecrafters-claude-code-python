@@ -1,5 +1,6 @@
 import argparse
 from email.mime import message
+from transport import read_message, write_message
 from dotenv import load_dotenv
 import os
 import sys
@@ -24,6 +25,21 @@ BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v
 def send_positive_response():
     """Print a friendly, positive confirmation after the task is completed."""
     print("\n🎉 Great job! The task is complete. Well done! 🎉\n")
+
+def handle_initialize(message):
+    # takes the incomming dict and returns the response dict
+    id = message.get("id", None)
+    if id is None:
+        raise ValueError("Missing 'id' in the initialize message")
+    response = {
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {
+            "protocol_version": "1.0",
+        }
+    }
+
+    return response
 
 
 def run_turning_loop(messages, sarvam_client):
@@ -166,6 +182,21 @@ def run_turning_loop(messages, sarvam_client):
                         "content": result_content
                     }
                     )
+def run_acp_mode(sarvam_client):
+    """Run the program in ACP mode, reading messages from stdin and writing responses to stdout."""
+    try:
+            message = read_message()
+    except (EOFError, KeyboardInterrupt):
+        print("\nExiting ACP mode.")
+        return
+    # if not message:
+    #     continue
+    if message.get("method") == "initialize":
+        response = handle_initialize(message)
+        write_message(response)
+    #     continue
+    # messages = [message]
+    # run_turning_loop(messages, sarvam_client)
 
 def run_interactive_mode(sarvam_client):
     """Run the program in interactive mode, allowing the user to input prompts."""
@@ -186,6 +217,7 @@ def run_interactive_mode(sarvam_client):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("-p", required=False, default=None, help="The prompt to send to the model")
+    p.add_argument("--acp", action="store_true", help="Run in ACP mode (read from stdin, write to stdout)") 
     args = p.parse_args()
 
     if not API_KEY:
@@ -194,10 +226,14 @@ def main():
         raise RuntimeError("SARVAM_API_KEY is not set")
 
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)    
+    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)   
+
 
     if not args.p:
-        run_interactive_mode(sarvam_client)
+        if args.acp:
+            run_acp_mode(sarvam_client)
+        else:
+            run_interactive_mode(sarvam_client)
         return
 
     messages=[{"role": "user", "content": args.p}]
