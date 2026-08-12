@@ -6,6 +6,7 @@ import sys
 import json
 
 from openai import OpenAI
+from sarvamai import SarvamAI
 
 # 1. Find the folder where this script actually lives
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,24 +17,21 @@ load_dotenv(dotenv_path=env_path)
 # print(env_path)
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("-p", required=True)
-    args = p.parse_args()
+def send_positive_response():
+    """Print a friendly, positive confirmation after the task is completed."""
+    print("\n🎉 Great job! The task is complete. Well done! 🎉\n")
 
-    if not API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY is not set")
 
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    messages=[{"role": "user", "content": args.p}]
-
+def run_turning_loop(messages, sarvam_client):
     while True:
-        chat = client.chat.completions.create(
+        chat = sarvam_client.chat.completions(
             # model="google/gemma-4-26b-a4b-it:free",
-            model="anthropic/claude-haiku-4.5",
+            # model="anthropic/claude-haiku-4.5",
+            model="sarvam-105b",
             messages=messages,
             tools=[
                 {
@@ -123,13 +121,13 @@ def main():
             break  
 
         # You can use print statements as follows for debugging, they'll be visible when running tests.
-        print("Logs from your program will appear here!", file=sys.stderr)
+        print("Logs from your program will appear here!", file=sys.stdout)
 
         
         for tc in response_message.tool_calls:
             args_dict = json.loads(tc.function.arguments)
             if tc.function.name == "Read":
-                with open(args_dict["file_path"], "r") as f:
+                with open(args_dict["file_path"], "r", encoding="utf-8") as f:
                     result = f.read()
                     messages.append(
                         {
@@ -139,17 +137,22 @@ def main():
                     }
                     )
             elif tc.function.name == "Write":
-                if not os.path.exists(args_dict["file_path"]):
-                    with open(args_dict["file_path"], "w") as f:
+                file_path = args_dict["file_path"]
+                tmp_path = file_path + ".tmp"
+                try:
+                    with open(tmp_path, "w", encoding="utf-8") as f:
                         f.write(args_dict["content"])
-                else:
-                    with open(args_dict["file_path"], "w") as f:
-                        f.write(args_dict["content"])
+                    os.replace(tmp_path, file_path)
+                    tool_content = f"Wrote to {file_path}"
+                except Exception as e:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+                    tool_content = f"Error writing to {file_path}: {e}"
                 messages.append(
                     {
                         "role": "tool",
                         "tool_call_id": tc.id,
-                        "content": f"Wrote to {args_dict['file_path']}"
+                        "content": tool_content
                     }
                     )
             elif tc.function.name == "Bash":
@@ -163,6 +166,43 @@ def main():
                         "content": result_content
                     }
                     )
+
+def run_interactive_mode(sarvam_client):
+    """Run the program in interactive mode, allowing the user to input prompts."""
+    messages = []
+    while True:
+        try:
+            user_input = input("Enter your prompt (or type 'exit' to quit): ")
+        except (KeyboardInterrupt, EOFError):
+            print("\nExiting interactive mode.")
+            break
+        if user_input.lower() == 'exit':
+            print("Exiting interactive mode.")
+            break   
+        messages.append({"role": "user", "content": user_input})
+        run_turning_loop(messages, sarvam_client)
+                
+                
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("-p", required=False, default=None, help="The prompt to send to the model")
+    args = p.parse_args()
+
+    if not API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is not set")
+    if not SARVAM_API_KEY:
+        raise RuntimeError("SARVAM_API_KEY is not set")
+
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    sarvam_client = SarvamAI(api_subscription_key=SARVAM_API_KEY)    
+
+    if not args.p:
+        run_interactive_mode(sarvam_client)
+        return
+
+    messages=[{"role": "user", "content": args.p}]
+    run_turning_loop(messages, sarvam_client)
+    send_positive_response()
 
 
 if __name__ == "__main__":
